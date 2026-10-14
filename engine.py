@@ -107,7 +107,24 @@ def handle_vep_workflow(sub_task, model, input_path, output_dir,device):
       # -------------------------------------------
 
       print('    - Model evaluation completed successfully.')
+      
+      # 3. Convert predictions to a standard NumPy array if it's a torch tensor
+      if hasattr(preds, 'detach'):
+          preds_array = preds.detach().cpu().numpy()
+      elif isinstance(preds, torch.Tensor):
+          preds_array = preds.cpu().numpy()
+      else:
+          preds_array = preds
 
+      # 4. Save artifacts to output_dir
+      os.makedirs(output_dir, exist_ok=True)
+        
+      # Save raw predictions matrix
+      preds_file_path = os.path.join(output_dir, 'predictions.npy')
+      import numpy as np
+      np.save(preds_file_path, preds_array)
+      print(f'    - Saved raw predictions to: {preds_file_path}')
+      
       # Summarize execution metrics and prediction output details
       results_df = pd.DataFrame({
         'input_vcf': [vcf_path],
@@ -117,6 +134,10 @@ def handle_vep_workflow(sub_task, model, input_path, output_dir,device):
         'status': ['Completed successfully'],
         'output_predictions_shape': [str(preds.shape) if hasattr(preds, 'shape') else len(preds)]
       })
+      
+      summary_file_path = os.path.join(output_dir, 'summary_report.csv')
+      results_df.to_csv(summary_file_path, index=False)
+      print(f'    - Saved summary report to: {summary_file_path}')
 
       return results_df, preds
 
