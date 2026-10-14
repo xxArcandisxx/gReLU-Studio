@@ -58,7 +58,8 @@ def execute_platform_workflow(
 
 def handle_vep_workflow(sub_task, model, input_path, output_dir,device):
   print(f'[*] Executing VEP module: {sub_task}')
-
+  
+  #done
   if sub_task == 'pathogenicity_disruption':
     
     vcf_path = input_path.get('vcf')
