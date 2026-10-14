@@ -1,0 +1,24 @@
+model_params:
+  crop_len: 0
+  model_type: EnformerPretrainedModel
+  n_tasks: 204
+  n_transformers: 1
+train_params:
+  accumulate_grad_batches: 1
+  batch_size: 3072
+  checkpoint: true
+  class_weights: null
+  clip: 0
+  devices: 0
+  grelu_version: 1.0.4.post1.dev39
+  logger: wandb
+  loss: bce
+  lr: 0.0001
+  max_epochs: 10
+  name: '2025_06_03_00_07'
+  num_workers: 32
+  optimizer: adam
+  pos_weight: null
+  save_dir: human-atac-catlas
+  task: binary
+  total_weight: null
