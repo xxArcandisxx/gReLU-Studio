@@ -136,15 +136,77 @@ def handle_vep_workflow(sub_task, model, input_path, output_dir,device):
         'output_predictions_shape': [str(preds.shape) if hasattr(preds, 'shape') else len(preds)]
       })
       
-      summary_file_path = os.path.join(output_dir, 'summary_report.csv')
+      summary_file_path = os.path.join(output_dir, 'pathogenicity_disruption-summary_report.csv')
       results_df.to_csv(summary_file_path, index=False)
       print(f'    - Saved summary report to: {summary_file_path}')
 
       return results_df, preds
 
   elif sub_task == 'allele_specific_regulation':
-    # Logic for allele-specific expression / regulatory differences
-    pass
+    vcf_path = input_path.get('vcf')
+    fasta_path = input_path.get('fasta')
+    
+    if not vcf_path or not fasta_path:
+          raise ValueError("Allele-Specific Regulation requires both 'fasta' and 'vcf' files.")
+    if not os.path.exists(vcf_path):
+          raise FileNotFoundError(f'VCF file not found: {vcf_path}')
+    if not os.path.exists(fasta_path):
+          raise FileNotFoundError(f'Reference FASTA not found: {fasta_path}')
+
+    print(f'    - Evaluating alleles using VCF: {vcf_path}')
+    print(f'    - Reference genome sequence: {fasta_path}')
+    
+    ensure_chrom_sizes_exist(fasta_path)
+    
+    # Load variant records (skipping comment headers)
+    variants_df = pd.read_csv(vcf_path, comment='#', sep='\t', header=None)
+    
+    if variants_df.shape[1] >= 5:
+      col_names = ['chrom', 'pos', 'id', 'ref', 'alt', 'qual', 'filter', 'info']
+      variants_df.columns = col_names[:variants_df.shape[1]]
+
+      print(f'    - Loaded {len(variants_df)} variants. Setting up dataset...')
+
+      # Setup sequence context window and dataset
+      seq_len = 30  # Keep matching your testing setup or change to dynamic later
+      dataset = VariantDataset(variants=variants_df, genome=fasta_path, seq_len=seq_len)
+        
+      print(f'    - Running model predictions on device: {device}...')
+      preds = model.predict_on_dataset(dataset, devices="cpu")
+
+      print('    - Allele-specific evaluation completed successfully.')
+      
+      # Convert predictions to a standard NumPy array
+      if hasattr(preds, 'detach'):
+          preds_array = preds.detach().cpu().numpy()
+      elif isinstance(preds, torch.Tensor):
+          preds_array = preds.cpu().numpy()
+      else:
+          preds_array = preds
+
+      # Save artifacts to output_dir
+      os.makedirs(output_dir, exist_ok=True)
+        
+      preds_file_path = os.path.join(output_dir, 'allele_specific_predictions.npy')
+      import numpy as np
+      np.save(preds_file_path, preds_array)
+      print(f'    - Saved allele-specific predictions to: {preds_file_path}')
+      
+      # Summarize execution metrics
+      results_df = pd.DataFrame({
+        'input_vcf': [vcf_path],
+        'reference_fasta': [fasta_path],
+        'variants_analyzed': [len(variants_df)],
+        'analysis_type': ['Allele-Specific Regulation'],
+        'status': ['Completed successfully'],
+        'output_predictions_shape': [str(preds.shape) if hasattr(preds, 'shape') else len(preds)]
+      })
+      
+      summary_file_path = os.path.join(output_dir, 'allele_specific_regulation-summary_report.csv')
+      results_df.to_csv(summary_file_path, index=False)
+      print(f'    - Saved summary report to: {summary_file_path}')
+
+      return results_df, preds
 
   elif sub_task == 'variant_prioritization':
     # Ranking variants based on predicted functional impact scores
@@ -229,7 +291,7 @@ if __name__ == '__main__':
   execute_platform_workflow(
       primary_tier='VEP',
       sub_task='pathogenicity_disruption',
-      repo_id='Genentech/human-atac-catlas-model',
+      repo_id='Genentech/test-model',
       model_filename='model.ckpt',
       input_files=sample_files,
       output_dir='outputs',
