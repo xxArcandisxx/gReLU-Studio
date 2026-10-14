@@ -40,3 +40,7 @@ Thumbs.db
 #index files
 *.fai
 *.sizes
+
+#output and logs
+outputs/
+lightning_logs/
