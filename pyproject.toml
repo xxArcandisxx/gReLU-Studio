@@ -1,0 +1,23 @@
+[project]
+name = "grelu-studio"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.1.3",
+    "flask-login>=0.6.3",
+    "flask-sqlalchemy>=3.1.1",
+    "grelu>=1.1.0",
+    "torch>=2.14.1",
+    "torchaudio>=2.11.0",
+    "torchvision>=0.29.1",
+    "werkzeug>=3.1.9",
+]
+
+[project.scripts]
+grelu-studio = "grelu_studio:main"
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"
